@@ -29,6 +29,7 @@ run_post() { # event-json-file
   REPORT_FILE="$REPORT" GITHUB_TOKEN=x GITHUB_REPOSITORY="octo/repo" \
   GITHUB_STEP_SUMMARY="$summary" GITHUB_EVENT_PATH="$1" \
   COMMENT_TAG="${COMMENT_TAG:-}" USAGE_FOOTER="${USAGE_FOOTER:-}" \
+  COMPARISON_FOOTER="${COMPARISON_FOOTER:-}" \
   MOCK_GH_LOG="$ghlog" MOCK_GH_EXISTING_ID="${MOCK_GH_EXISTING_ID:-}" \
     bash "$ROOT/scripts/post-review.sh" >/dev/null 2>&1
 }
@@ -76,5 +77,12 @@ USAGE_FOOTER="$FOOTER" run_post "$TMP/pr.json"
 assert_contains "$(cat "$TMP/summary")" "Agent usage" "usage footer appended to summary"
 USAGE_FOOTER="$TMP/missing-footer.md" run_post "$TMP/pr.json"
 assert_not_contains "$(cat "$TMP/summary")" "Agent usage" "missing footer file is ignored"
+
+# --- comparison footer: links the portable artifact from summary/comment ---
+COMPARISON="$TMP/comparison-footer.md"
+printf '### Interactive comparison\n\nDownload `comparison-artifact`.\n' > "$COMPARISON"
+COMPARISON_FOOTER="$COMPARISON" run_post "$TMP/pr.json"
+assert_contains "$(cat "$TMP/summary")" "Interactive comparison" "comparison footer appended"
+assert_contains "$(cat "$TMP/summary")" "comparison-artifact" "comparison artifact named"
 
 finish
