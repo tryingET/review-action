@@ -5,7 +5,8 @@ description: |
   (Claude Code, headless) running the getappmap/skills `appmap-gold-traces` and
   `appmap-review` skills. Updated gold traces (and any labels/tests the agent adds)
   are committed and pushed to the PR branch; the review is posted as a PR comment
-  and job summary.
+  and job summary. When the AppMap CLI produces interactive comparison bundles,
+  they are uploaded as a portable workflow artifact.
 branding:
   icon: eye
   color: purple
@@ -95,6 +96,15 @@ inputs:
   commit-message:
     description: Commit subject used when pushing gold-trace (and related) updates. `[skip ci]` is appended automatically.
     default: 'chore(gold-traces): update behavioral baseline'
+  upload-comparison-artifact:
+    description: Upload portable `*.compare.diff.sequence.json` bundles produced by the review.
+    default: 'true'
+  comparison-artifact-name:
+    description: Name of the workflow artifact containing interactive before/after comparisons.
+    default: appmap-behavior-comparison
+  comparison-retention-days:
+    description: Number of days to retain the interactive comparison artifact.
+    default: '14'
 
 outputs:
   report-file:
@@ -103,6 +113,15 @@ outputs:
   gold-traces-updated:
     description: 'true if the agent produced committable changes that were pushed.'
     value: ${{ steps.commit.outputs.updated }}
+  comparison-artifact-available:
+    description: 'true when interactive comparison bundles were generated.'
+    value: ${{ steps.comparison.outputs.available }}
+  comparison-artifact-name:
+    description: Name of the uploaded interactive comparison artifact.
+    value: ${{ steps.comparison.outputs.artifact-name }}
+  comparison-artifact-path:
+    description: Local directory containing the packaged comparison bundles.
+    value: ${{ steps.comparison.outputs.path }}
   models:
     description: Comma-separated model ids the agent reported using.
     value: ${{ steps.usage.outputs.models }}
@@ -256,6 +275,27 @@ runs:
         USAGE_DIR: ${{ runner.temp }}/appmap-usage
       run: ${{ github.action_path }}/scripts/run-agent.sh review
 
+    - name: Package interactive comparison
+      id: comparison
+      if: steps.guard.outputs.skip != 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        COMPARISON_ARTIFACT_NAME: ${{ inputs.comparison-artifact-name }}
+      run: ${{ github.action_path }}/scripts/package-comparison.sh
+
+    - name: Upload interactive comparison
+      if: >-
+        steps.guard.outputs.skip != 'true' &&
+        inputs.upload-comparison-artifact == 'true' &&
+        steps.comparison.outputs.available == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ steps.comparison.outputs.artifact-name }}
+        path: ${{ steps.comparison.outputs.path }}
+        retention-days: ${{ inputs.comparison-retention-days }}
+        if-no-files-found: error
+
     # Aggregate what the agent reported about its own usage (models, tokens,
     # cost or premium requests) into step outputs and a report footer.
     - name: Report agent usage
@@ -275,4 +315,5 @@ runs:
         REPORT_FILE: ${{ steps.review.outputs.report-file }}
         COMMENT_TAG: ${{ inputs.comment-tag || inputs.working-directory }}
         USAGE_FOOTER: ${{ steps.usage.outputs.footer-file }}
+        COMPARISON_FOOTER: ${{ steps.comparison.outputs.footer-file }}
       run: ${{ github.action_path }}/scripts/post-review.sh
