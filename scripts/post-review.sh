@@ -10,22 +10,26 @@ if [[ ! -s "$REPORT_FILE" ]]; then
   exit 1
 fi
 
-# Optional agent-usage footer (written by usage.mjs report).
-footer_file=""
-if [[ -n "${USAGE_FOOTER:-}" && -s "${USAGE_FOOTER}" ]]; then
-  footer_file="$USAGE_FOOTER"
-fi
-
-append_footer() { # <target-file>
-  if [[ -n "$footer_file" ]]; then
-    { printf '\n\n---\n\n'; cat "$footer_file"; } >> "$1"
+# Optional generated footers. Usage is written by usage.mjs; comparison is
+# written by package-comparison.sh when interactive bundles exist.
+footer_files=()
+for candidate in "${COMPARISON_FOOTER:-}" "${USAGE_FOOTER:-}"; do
+  if [[ -n "$candidate" && -s "$candidate" ]]; then
+    footer_files+=("$candidate")
   fi
+done
+
+append_footers() { # <target-file>
+  local footer
+  for footer in "${footer_files[@]}"; do
+    { printf '\n\n---\n\n'; cat "$footer"; } >> "$1"
+  done
 }
 
 # Job summary — always available.
 if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
   cat "$REPORT_FILE" >> "$GITHUB_STEP_SUMMARY"
-  append_footer "$GITHUB_STEP_SUMMARY"
+  append_footers "$GITHUB_STEP_SUMMARY"
 fi
 
 # PR comment — only when this run is associated with a pull request.
@@ -58,7 +62,7 @@ else
 fi
 body_file="$(mktemp)"
 { printf '%s\n\n' "$MARKER"; cat "$REPORT_FILE"; } > "$body_file"
-append_footer "$body_file"
+append_footers "$body_file"
 
 repo="${GITHUB_REPOSITORY}"
 export GITHUB_TOKEN
