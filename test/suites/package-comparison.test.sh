@@ -26,10 +26,10 @@ output="$TMP/output"
 values="$(cat "$output")"
 assert_contains "$values" "available=true" "comparison artifact is available"
 assert_contains "$values" "artifact-name=comparison-test" "artifact name is exported"
-assert_file_exists \
+assert_file \
   "$TMP/project/.appmap/review/comparison/diff/minitest/login.compare.diff.sequence.json" \
   "comparison bundle is copied with its relative path"
-assert_file_exists \
+assert_file \
   "$TMP/project/.appmap/review/comparison/README.md" \
   "artifact includes opening instructions"
 assert_contains \
