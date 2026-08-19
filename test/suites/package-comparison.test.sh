@@ -7,11 +7,50 @@ source "$TEST_DIR/lib/assert.sh"
 
 echo "== package-comparison.sh =="
 
+if ! command -v jq >/dev/null 2>&1; then
+  echo "  (skipped: jq not installed)"
+  exit 0
+fi
+
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 mkdir -p "$TMP/project" "$TMP/source/diff/minitest"
-printf '{"kind":"appmap.sequence-comparison"}\n' > \
-  "$TMP/source/diff/minitest/login.compare.diff.sequence.json"
+
+cat > "$TMP/source/diff/minitest/login.compare.diff.sequence.json" <<'JSON'
+{
+  "kind": "appmap.comparison",
+  "schemaVersion": 1,
+  "producer": { "name": "test", "version": "1" },
+  "scenario": { "id": "login" },
+  "recordings": { "base": "base.appmap.json", "head": "head.appmap.json" },
+  "capabilities": { "views": { "sequence": 1 } },
+  "changes": [
+    {
+      "id": "chg_11111111111111111111",
+      "kind": "call-added",
+      "summary": "Added authorize",
+      "head": { "eventIds": [3] },
+      "views": {
+        "sequence": {
+          "head": { "eventIds": [3] },
+          "diff": { "eventIds": [3] }
+        }
+      }
+    }
+  ],
+  "views": {
+    "sequence": {
+      "schemaVersion": 1,
+      "base": { "actors": [], "rootActions": [] },
+      "head": { "actors": [], "rootActions": [] },
+      "diff": { "actors": [], "rootActions": [] },
+      "alignment": { "actorOrder": [] }
+    }
+  }
+}
+JSON
+printf '{"kind":"not-a-comparison"}\n' > \
+  "$TMP/source/diff/minitest/invalid.compare.diff.sequence.json"
 
 output="$TMP/output"
 : > "$output"
@@ -28,10 +67,17 @@ assert_contains "$values" "available=true" "comparison artifact is available"
 assert_contains "$values" "artifact-name=comparison-test" "artifact name is exported"
 assert_file \
   "$TMP/project/.appmap/review/comparison/diff/minitest/login.compare.diff.sequence.json" \
-  "comparison bundle is copied with its relative path"
+  "schema-v1 comparison bundle is copied with its relative path"
+assert_not_file \
+  "$TMP/project/.appmap/review/comparison/diff/minitest/invalid.compare.diff.sequence.json" \
+  "invalid bundle is not published"
 assert_file \
   "$TMP/project/.appmap/review/comparison/README.md" \
   "artifact includes opening instructions"
+assert_contains \
+  "$(cat "$TMP/project/.appmap/review/comparison/README.md")" \
+  "appmap.comparison" \
+  "artifact documents the frozen contract"
 assert_contains \
   "$(cat "$TMP/project/.appmap/review/comparison-footer.md")" \
   "comparison-test" \
