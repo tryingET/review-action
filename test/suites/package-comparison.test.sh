@@ -68,7 +68,7 @@ assert_contains "$values" "artifact-name=comparison-test" "artifact name is expo
 assert_file \
   "$TMP/project/.appmap/review/comparison/diff/minitest/login.compare.diff.sequence.json" \
   "schema-v1 comparison bundle is copied with its relative path"
-assert_not_file \
+assert_no_file \
   "$TMP/project/.appmap/review/comparison/diff/minitest/invalid.compare.diff.sequence.json" \
   "invalid bundle is not published"
 assert_file \
