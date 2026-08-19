@@ -14,7 +14,13 @@ AGENT="${AGENT:-claude}"
 
 # Skills this action drives directly, plus the ones they reference at runtime
 # (appmap-review and appmap-gold-traces delegate labeling/recording to these).
-USED_SKILLS=(appmap-gold-traces appmap-review appmap-label appmap-record)
+USED_SKILLS=(
+  appmap-gold-traces
+  appmap-review
+  appmap-comparison
+  appmap-label
+  appmap-record
+)
 
 WORKDIR="${RUNNER_TEMP:-/tmp}/getappmap-skills"
 CLAUDE_SKILLS_DIR="${HOME}/.claude/skills"

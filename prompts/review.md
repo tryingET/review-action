@@ -19,6 +19,14 @@ Follow the skill's review recipe and its **Report format** exactly — the skill
 the sole authority on the report's structure and style. A clean compare is a valid
 report; write it rather than writing nothing.
 
+After `appmap-review` has produced its compare report, use the **appmap-comparison**
+skill with the same baseline and head revisions. It creates portable
+`*.compare.diff.sequence.json` files next to the compare evidence so the action can
+upload an interactive before/after artifact. If the installed AppMap CLI does not yet
+provide `sequence-diagram-compare`, skip this presentation step without failing the
+behavioral review. Do not add artifact plumbing or generation status to the interpreted
+review itself; the action publishes the artifact notice separately.
+
 **Write the final Markdown report to this file — nothing else needs to go there:**
 
     ${REPORT_FILE}

@@ -32,7 +32,7 @@ run_install() { # agent home runner-temp
 # --- claude: links used skills, skips the unused one ---
 H1="$TMP/home1"; RT1="$TMP/rt1"; mkdir -p "$H1" "$RT1"
 assert_ok "claude install runs" run_install claude "$H1" "$RT1"
-for s in appmap-gold-traces appmap-review appmap-label appmap-record; do
+for s in appmap-gold-traces appmap-review appmap-comparison appmap-label appmap-record; do
   assert_symlink "$H1/.claude/skills/$s" "linked $s"
 done
 assert_no_file "$H1/.claude/skills/appmap-unused" "unused skill not linked"
@@ -51,5 +51,6 @@ H3="$TMP/home3"; RT3="$TMP/rt3"; mkdir -p "$H3" "$RT3"
 assert_ok "copilot install runs" run_install copilot "$H3" "$RT3"
 assert_no_file "$H3/.claude/skills" "copilot creates no ~/.claude/skills"
 assert_file "$RT3/getappmap-skills/appmap-review/SKILL.md" "copilot clone present in working dir"
+assert_file "$RT3/getappmap-skills/appmap-comparison/SKILL.md" "comparison skill present"
 
 finish
