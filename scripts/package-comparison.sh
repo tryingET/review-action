@@ -26,7 +26,7 @@ validate_bundle() { # <file>
     (.views.sequence.diff.actors | type == "array") and
     (.views.sequence.alignment.actorOrder | type == "array") and
     (.changes | type == "array") and
-    (all(.changes[]; .id | test("^chg_[0-9a-f]{20}(_[1-9][0-9]*)?$")))
+    (all(.changes[]; .id | test("^chg_[0-9a-f]{20}(_[2-9][0-9]*|_[1-9][0-9]+)?$")))
   ' "$1" >/dev/null 2>&1
 }
 
